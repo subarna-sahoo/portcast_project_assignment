@@ -2,7 +2,8 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.commons.models import Paragraph
 from backend.commons.configs import get_settings
-from elasticsearch import AsyncElasticsearch
+from backend.commons.elasticsearch_client import ElasticsearchClient
+
 
 settings = get_settings()
 
@@ -26,18 +27,14 @@ class IngestService:
         await self.db.refresh(paragraph)
 
         # Index in Elasticsearch
-        es = AsyncElasticsearch([self.settings.elasticsearch_url])
-        try:
-            await es.index(
-                index="paragraphs",
-                id=paragraph.id,
-                document={
-                    "id": paragraph.id,
-                    "content": paragraph.content,
-                    "created_at": paragraph.created_at.isoformat(),
-                },
-            )
-        finally:
-            await es.close()
+        await ElasticsearchClient.index_document(
+                    index="paragraphs",
+                    id=paragraph.id,
+                    document={
+                        "id": paragraph.id,
+                        "content": paragraph.content,
+                        "created_at": paragraph.created_at.isoformat(),
+                    },
+                )
 
         return paragraph
