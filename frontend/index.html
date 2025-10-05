@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paragraph Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .search-box {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .result-item {
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background-color: #f8d7da;
+            border-radius: 4px;
+        }
+        .success {
+            color: #155724;
+            padding: 10px;
+            background-color: #d4edda;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Paragraph Search</h1>
+
+        <div>
+            <button class="btn btn-primary" onclick="fetchParagraph()">Fetch Paragraph</button>
+            <button class="btn btn-success" onclick="getDictionary()">Top 10 Words</button>
+        </div>
+
+        <div id="message"></div>
+
+        <div class="search-box">
+            <h3>Search Paragraphs</h3>
+            <label>Search words (space or comma separated):</label>
+            <input type="text" id="searchWords" placeholder="word1 word2 word3">
+
+            <div>
+                <label><input type="radio" name="operator" value="or" checked> OR</label>
+                <label><input type="radio" name="operator" value="and"> AND</label>
+            </div>
+
+            <button class="btn btn-primary" onclick="searchParagraphs()">Search</button>
+            <p style="font-size: 12px; color: #666; margin-top: 5px;">Supports fuzzy matching (up to 2 character differences)</p>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost/api';
+
+        function fetchParagraph() {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = '<div class="loading">Fetching...</div>';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', API_BASE + '/fetch', true);
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    messageDiv.innerHTML = '<div class="success">Paragraph fetched successfully!</div>';
+                    setTimeout(() => messageDiv.innerHTML = '', 3000);
+                } else {
+                    messageDiv.innerHTML = '<div class="error">Error fetching paragraph</div>';
+                }
+            };
+
+            xhr.onerror = function() {
+                messageDiv.innerHTML = '<div class="error">Network error</div>';
+            };
+
+            xhr.send();
+        }
+
+        function searchParagraphs() {
+            const wordsInput = document.getElementById('searchWords').value;
+            const operator = document.querySelector('input[name="operator"]:checked').value;
+            const resultsDiv = document.getElementById('results');
+
+            if (!wordsInput.trim()) {
+                alert('Please enter words to search');
+                return;
+            }
+
+            // Split by both comma and space, remove empty strings
+            const words = wordsInput.split(/[,\s]+/).filter(w => w.trim());
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', API_BASE + '/search', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+
+                    if (data.total === 0) {
+                        resultsDiv.innerHTML = '<div class="result-item">No results found</div>';
+                        return;
+                    }
+
+                    let html = '<h3>Results (' + data.total + ')</h3>';
+                    data.paragraphs.forEach(function(para) {
+                        html += '<div class="result-item">';
+                        html += '<strong>Paragraph #' + para.id + '</strong><br>';
+                        html += '<p>' + para.content.substring(0, 400) + '...</p>';
+                        html += '</div>';
+                    });
+
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = '<div class="error">Search failed</div>';
+                }
+            };
+
+            xhr.onerror = function() {
+                resultsDiv.innerHTML = '<div class="error">Network error</div>';
+            };
+
+            xhr.send(JSON.stringify({ words: words, operator: operator }));
+        }
+
+        function getDictionary() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Loading dictionary...</div>';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', API_BASE + '/dictionary', true);
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+
+                    if (data.definitions.length === 0) {
+                        resultsDiv.innerHTML = '<div class="result-item">No words found</div>';
+                        return;
+                    }
+
+                    let html = '<h3>Top 10 Words</h3>';
+                    data.definitions.forEach(function(def, index) {
+                        html += '<div class="result-item">';
+                        html += '<strong>' + (index + 1) + '. ' + def.word.toUpperCase() + '</strong> ';
+                        html += '<span>(Frequency: ' + def.frequency + ')</span><br>';
+                        html += '<p>' + def.definition + '</p>';
+                        html += '</div>';
+                    });
+
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = '<div class="error">Failed to load dictionary</div>';
+                }
+            };
+
+            xhr.onerror = function() {
+                resultsDiv.innerHTML = '<div class="error">Network error</div>';
+            };
+
+            xhr.send();
+        }
+    </script>
+</body>
+</html>
