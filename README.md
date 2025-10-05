@@ -47,25 +47,6 @@ This application provides a robust API for:
 
 ---
 
-## ✨ Features
-
-### Core Features
-- ✅ **Async Architecture** - Non-blocking I/O for high performance
-- ✅ **Full-Text Search** - Elasticsearch with fuzzy matching (fuzziness=2)
-- ✅ **Smart Caching** - Redis-backed word frequency cache
-- ✅ **Auto-Indexing** - Elasticsearch automatic document indexing
-- ✅ **Word Analysis** - Stopword filtering & frequency tracking
-
-### Production Features
-- 🔍 **Health Checks** - Liveness and readiness probes
-- 📊 **Prometheus Metrics** - Request latency, throughput, system resources
-- 📝 **Structured Logging** - JSON/Text logging with configurable levels
-- 🧪 **Comprehensive Tests** - 33 test cases with 71% coverage
-- 🐳 **Docker Ready** - Full containerization with docker-compose
-- 🔒 **CORS Enabled** - Configurable cross-origin requests
-
----
-
 ## 🏗️ Architecture
 
 ```
@@ -89,8 +70,6 @@ This application provides a robust API for:
 3. **Dictionary**: Client → FastAPI → Redis/DB → Dictionary API
 
 ---
-
-## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -578,32 +557,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🎓 Key Features Demonstrated
-
-This project showcases:
-
-✅ **Async Programming** - Full async/await with FastAPI
-✅ **Database Design** - PostgreSQL with SQLAlchemy ORM
-✅ **Caching Strategy** - Multi-level caching with Redis
-✅ **Full-Text Search** - Elasticsearch integration
-✅ **API Design** - RESTful APIs with proper status codes
-✅ **Error Handling** - Graceful degradation and fallbacks
-✅ **Testing** - Unit tests with 71% coverage
-✅ **Monitoring** - Prometheus metrics and health checks
-✅ **Containerization** - Docker multi-service composition
-✅ **Documentation** - Comprehensive docs and API specs
-
----
-
-## 📞 Support
-
-For issues, questions, or contributions, please open an issue on the GitHub repository.
-
----
-
 <div align="center">
-
-**Built with ❤️ using FastAPI, PostgreSQL, Redis, and Elasticsearch**
 
 [⬆ Back to Top](#portcast-project-assignment)
 
