@@ -111,23 +111,34 @@
         const API_BASE = 'http://localhost/api';
 
         function fetchParagraph() {
+            const resultsDiv = document.getElementById('results');
             const messageDiv = document.getElementById('message');
-            messageDiv.innerHTML = '<div class="loading">Fetching...</div>';
+
+            resultsDiv.innerHTML = '<div class="loading">Fetching...</div>';
+            messageDiv.innerHTML = '';
 
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', API_BASE + '/fetch', true);
+            xhr.open('POST', API_BASE + '/fetch', true);
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
-                    messageDiv.innerHTML = '<div class="success">Paragraph fetched successfully!</div>';
-                    setTimeout(() => messageDiv.innerHTML = '', 3000);
+                    const data = JSON.parse(xhr.responseText);
+                    let html = '<div class="success" style="margin-bottom: 15px;">Paragraph fetched successfully!</div>';
+                    html += '<h3>New Paragraph</h3>';
+                    html += '<div class="result-item">';
+                    html += '<strong>Paragraph #' + data.id + '</strong><br>';
+                    html += '<small style="color: #666;">Created: ' + new Date(data.created_at).toLocaleString() + '</small><br><br>';
+                    html += '<p>' + data.content + '</p>';
+                    html += '</div>';
+
+                    resultsDiv.innerHTML = html;
                 } else {
-                    messageDiv.innerHTML = '<div class="error">Error fetching paragraph</div>';
+                    resultsDiv.innerHTML = '<div class="error">Error fetching paragraph</div>';
                 }
             };
 
             xhr.onerror = function() {
-                messageDiv.innerHTML = '<div class="error">Network error</div>';
+                resultsDiv.innerHTML = '<div class="error">Network error</div>';
             };
 
             xhr.send();

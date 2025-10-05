@@ -1,9 +1,8 @@
 from typing import List, Literal
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, literal
+from sqlalchemy import select, literal, case
 from backend.commons.models import Paragraph
 from backend.commons.elasticsearch_client import ElasticsearchClient
-
 
 
 class SearchService:
@@ -50,10 +49,12 @@ class SearchService:
             return []  # no matches
 
         # Fetch from DB in same order as ES ranking
-        ordering = literal(0)
-        for idx, pid in enumerate(paragraph_ids):
-            ordering = ordering + (Paragraph.id == pid) * (len(paragraph_ids) - idx)
+        # Build a CASE statement for ordering based on ES rank
+        whens = {pid: len(paragraph_ids) - idx for idx, pid in enumerate(paragraph_ids)}
+        ordering = case(whens, value=Paragraph.id, else_=0).desc()
 
         stmt = select(Paragraph).where(Paragraph.id.in_(paragraph_ids)).order_by(ordering)
         result = await self.db.execute(stmt)
-        return result.scalars().all()
+        paragraphs = result.scalars().all()
+
+        return paragraphs

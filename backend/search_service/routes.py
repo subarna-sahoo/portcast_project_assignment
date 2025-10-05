@@ -14,7 +14,7 @@ async def search_paragraphs(
 ):
     service = SearchService(db)
     try:
-        paragraphs, total = await service.search_paragraphs(req.words, req.operator)
+        paragraphs = await service.search_paragraphs(req.words, req.operator)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -22,4 +22,7 @@ async def search_paragraphs(
         ParagraphResponse.model_validate(p) for p in paragraphs
     ]
 
-    return SearchResponse(paragraphs=resp_models, total=total)
+    return SearchResponse(
+        paragraphs=[ParagraphResponse.model_validate(p) for p in paragraphs],
+        total=len(paragraphs),
+    )

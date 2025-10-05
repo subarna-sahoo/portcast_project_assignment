@@ -2,7 +2,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 # Constants
-TOP_N_CACHED_WORDS = 100  # Number of top frequency words to keep in Redis cache
+TOP_N_CACHED_WORDS = 10  # Number of top frequency words to keep in Redis cache
+
+# Redis Cache Keys
+REDIS_TOP_WORDS_KEY = "top_words_freq"  # Key for storing top N word frequencies
+REDIS_DEFINITION_PREFIX = "word_def:"  # Prefix for word definition cache
+
+# Redis TTL values (in seconds)
+REDIS_WORD_FREQ_TTL = 7 * 24 * 60 * 60  # 7 days for word frequencies
+REDIS_DEFINITION_TTL = 60 * 60  # 1 hour for definitions
 
 
 class Settings(BaseSettings):

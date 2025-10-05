@@ -7,7 +7,8 @@ from sqlalchemy.dialects.postgresql import insert
 from backend.commons.models import Paragraph, WordFrequency
 from backend.commons.configs import get_settings
 from backend.commons.elasticsearch_client import ElasticsearchClient
-from backend.commons.redis_client import cache_word_frequencies
+from backend.commons.redis_client import invalidate_top_words_cache, update_top_words_cache_from_db
+from backend.commons.configs import TOP_N_CACHED_WORDS
 
 
 settings = get_settings()
@@ -60,6 +61,11 @@ class IngestService:
         """
         Extract words from new content, update frequency counts in DB and Redis.
         This runs as part of ingestion to keep frequencies up-to-date.
+
+        Flow:
+        1. Upsert word frequencies in DB
+        2. Invalidate Redis cache
+        3. Update cache with fresh top N words from DB
         """
         # Extract words from new content
         words = re.findall(r"\b[a-zA-Z]{4,}\b", new_content.lower())
@@ -69,31 +75,25 @@ class IngestService:
         if not new_word_counts:
             return
 
-        # Upsert word frequencies in DB (PostgreSQL)
-        for word, count in new_word_counts.items():
-            stmt = insert(WordFrequency).values(
-                word=word,
-                frequency=count
-            ).on_conflict_do_update(
-                index_elements=['word'],
-                set_=dict(frequency=WordFrequency.frequency + count)
-            )
-            await self.db.execute(stmt)
+        # Batch upsert word frequencies in DB (PostgreSQL)
+        values_list = [{"word": word, "frequency": count} for word, count in new_word_counts.items()]
 
+        stmt = insert(WordFrequency).values(values_list)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=['word'],
+            set_=dict(frequency=WordFrequency.__table__.c.frequency + stmt.excluded.frequency)
+        )
+
+        await self.db.execute(stmt)
         await self.db.commit()
 
-        # Update Redis cache with new frequencies
+        # Invalidate and update Redis cache
         if self.redis:
-            # Fetch updated frequencies from DB
-            stmt = select(WordFrequency.word, WordFrequency.frequency).where(
-                WordFrequency.word.in_(list(new_word_counts.keys()))
-            )
-            result = await self.db.execute(stmt)
-            updated_frequencies = {row.word: row.frequency for row in result}
-
-            # Cache in Redis
             try:
-                await cache_word_frequencies(self.redis, updated_frequencies)
-            except Exception:
+                # Invalidate old cache
+                await invalidate_top_words_cache(self.redis)
+                # Update with fresh top N words from DB
+                await update_top_words_cache_from_db(self.redis, self.db, TOP_N_CACHED_WORDS)
+            except Exception as e:
                 # Best effort caching, ignore failures
-                pass
+                print(f"⚠ Failed to update Redis cache: {e}")
