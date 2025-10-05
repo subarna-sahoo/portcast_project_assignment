@@ -1,6 +1,6 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Any, Dict, List, Optional
-from configs import get_settings
+from backend.commons.configs import get_settings
 
 settings = get_settings()
 
