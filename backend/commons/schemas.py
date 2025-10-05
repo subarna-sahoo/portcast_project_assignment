@@ -12,3 +12,11 @@ class ParagraphResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class SearchRequest(BaseModel):
+    words: List[str]
+    operator: Literal["and", "or"]
+
+class SearchResponse(BaseModel):
+    paragraphs: List[ParagraphResponse]
+    total: int
+
