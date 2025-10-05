@@ -99,6 +99,8 @@ docker-compose logs -f backend
 | **API Root** | http://localhost/api/ | API endpoints listing |
 | **Health Check** | http://localhost/api/health | Service health status |
 | **Metrics** | http://localhost/api/metrics | Prometheus metrics |
+| **Grafana Dashboard** | http://localhost:3000 | Monitoring dashboards (admin/admin) |
+| **Prometheus** | http://localhost:9090 | Metrics storage & queries |
 | **Frontend** | http://localhost/ | React UI |
 
 ---
@@ -534,7 +536,10 @@ Monitor these key metrics:
 | **API Swagger Docs** | http://localhost/api/docs |
 | **API ReDoc** | http://localhost/api/redoc |
 | **Health Check** | http://localhost/api/health |
-| **Metrics** | http://localhost/api/metrics |
+| **Prometheus Metrics** | http://localhost/api/metrics |
+| **Grafana Dashboard** | http://localhost:3000 |
+| **Prometheus UI** | http://localhost:9090 |
+| **Monitoring Guide** | [MONITORING.md](MONITORING.md) |
 | **Test Results** | [TEST_RESULTS.md](TEST_RESULTS.md) |
 | **Testing Guide** | [tests/README.md](tests/README.md) |
 | **License** | [LICENSE](LICENSE) |
