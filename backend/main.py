@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.ingest_service.routes import router as ingest_router
+
 
 app = FastAPI(
     title="Portcast Assignment API",
@@ -20,6 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(ingest_router)
+
 
 @app.get("/health")
 async def health():
