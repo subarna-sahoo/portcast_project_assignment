@@ -20,3 +20,10 @@ class SearchResponse(BaseModel):
     paragraphs: List[ParagraphResponse]
     total: int
 
+class WordDefinition(BaseModel):
+    word: str
+    definition: str
+    frequency: int
+
+class DictionaryResponse(BaseModel):
+    definitions: List[WordDefinition]
