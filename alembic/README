@@ -1,1 +1,9 @@
 Generic single-database configuration.
+
+
+
+## If running alembic, make sure to up 
+```docker compose up postgres ```
+
+## Then Run
+`alembic revision --autogenerate -m "initial schema"`
