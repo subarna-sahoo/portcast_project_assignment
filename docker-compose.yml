@@ -8,7 +8,7 @@ services:
     ports:
       - "5432:5432"   # expose to access by the port
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U portcast -d paragraphs_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d paragraphs_db"]
       interval: 10s
       timeout: 5s
       retries: 5
