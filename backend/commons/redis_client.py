@@ -1,7 +1,9 @@
 # backend/common/redis_client.py
 from typing import Optional, Dict
 import redis.asyncio as aioredis
-from backend.commons.configs  import get_settings
+from backend.commons.configs  import get_settings, TOP_N_CACHED_WORDS
+from sqlalchemy import update
+from backend.commons.models import WordFrequency
 
 settings = get_settings()
 
@@ -47,8 +49,18 @@ async def cache_word_frequencies(redis_client: aioredis.Redis, word_frequencies:
 
     await pipe.execute()
 
-async def get_word_frequency(redis_client: aioredis.Redis, word: str) -> Optional[int]:
-    """Get word frequency from Redis cache."""
+async def get_word_frequency(redis_client: aioredis.Redis, word: str, db_session=None) -> Optional[int]:
+    """
+    Get word frequency from Redis cache with DB fallback.
+
+    Args:
+        redis_client: Redis client instance
+        word: Word to look up
+        db_session: Optional DB session for fallback lookup
+
+    Returns:
+        Word frequency or None if not found
+    """
     try:
         key = f"word_freq:{word}"
         cached = await redis_client.get(key)
@@ -58,6 +70,20 @@ async def get_word_frequency(redis_client: aioredis.Redis, word: str) -> Optiona
             return int(cached)
     except Exception:
         pass
+
+    # Fallback to DB if not in cache and db_session is provided
+    if db_session:
+        try:
+            from sqlalchemy import select
+            from backend.commons.models import WordFrequency
+
+            stmt = select(WordFrequency.frequency).where(WordFrequency.word == word)
+            result = await db_session.execute(stmt)
+            row = result.scalar_one_or_none()
+            return row if row else None
+        except Exception:
+            pass
+
     return None
 
 async def get_all_word_frequencies(redis_client: aioredis.Redis) -> Dict[str, int]:
@@ -89,13 +115,16 @@ async def get_all_word_frequencies(redis_client: aioredis.Redis) -> Dict[str, in
     except Exception:
         return {}
 
-async def reload_word_frequencies_from_db(db_session) -> None:
+
+async def reload_word_frequencies_from_db(db_session, top_n: int = TOP_N_CACHED_WORDS) -> None:
     """
-    Reload word frequencies from PostgreSQL into Redis.
-    Called on app startup to ensure Redis cache is populated.
+    Reload top N word frequencies from PostgreSQL into Redis.
+    Merges Redis cache with DB data, keeping only top N by frequency (DB is source of truth).
+    Called on app startup to ensure Redis cache contains the most relevant words.
 
     Args:
         db_session: SQLAlchemy async session
+        top_n: Number of top frequency words to keep in cache (default: 100)
     """
     try:
         from sqlalchemy import select
@@ -103,16 +132,31 @@ async def reload_word_frequencies_from_db(db_session) -> None:
 
         redis_client = get_redis_client()
 
-        # Fetch all word frequencies from DB
+        # Get current cache state
+        current_cache = await get_all_word_frequencies(redis_client)
+
+        # Fetch ALL word frequencies from DB (source of truth)
         stmt = select(WordFrequency.word, WordFrequency.frequency)
         result = await db_session.execute(stmt)
         rows = result.all()
 
         if rows:
-            word_freq_dict = {row.word: row.frequency for row in rows}
-            # Batch cache in Redis
-            await cache_word_frequencies(redis_client, word_freq_dict)
-            print(f"✓ Loaded {len(word_freq_dict)} word frequencies into Redis cache")
+            # DB is the source of truth - use DB frequencies
+            all_word_freq = {row.word: row.frequency for row in rows}
+
+            # Get top N words by frequency
+            top_words = sorted(all_word_freq.items(), key=lambda x: x[1], reverse=True)[:top_n]
+            top_word_dict = dict(top_words)
+
+            # Remove words from cache that are not in top N
+            words_to_remove = set(current_cache.keys()) - set(top_word_dict.keys())
+            if words_to_remove:
+                keys_to_delete = [f"word_freq:{word}" for word in words_to_remove]
+                await redis_client.delete(*keys_to_delete)
+
+            # Update cache with top N words
+            await cache_word_frequencies(redis_client, top_word_dict)
+            print(f"✓ Loaded top {len(top_word_dict)} word frequencies into Redis cache")
         else:
             print("✓ No word frequencies found in DB - cache is empty")
 
