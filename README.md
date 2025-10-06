@@ -502,7 +502,21 @@ readinessProbe:
 
 ---
 
-## 📊 Monitoring
+## 📊 Monitoring & Health
+
+The application includes comprehensive monitoring with Prometheus and Grafana dashboards.
+
+### Grafana Dashboard
+
+Access the real-time monitoring dashboard at **http://localhost:3000/d/portcast-api/portcast-api-dashboard** (credentials: `admin`/`admin`)
+
+![Grafana Dashboard](docs/images/grafana-dashboard.png)
+
+The dashboard provides:
+- **Request Rate**: Real-time API request metrics by endpoint
+- **Request Latency**: p50/p95 latency percentiles for performance monitoring
+- **CPU & Memory Usage**: System resource utilization gauges
+- **Response Status Codes**: HTTP status distribution over time
 
 ### Prometheus Integration
 
@@ -517,15 +531,26 @@ scrape_configs:
     scrape_interval: 15s
 ```
 
-### Grafana Dashboards
+### Available Metrics
 
 Monitor these key metrics:
-- Request rate and latency
-- Error rates by endpoint
-- Database connection pool
-- Redis cache hit rate
-- Elasticsearch query performance
-- System resources (CPU, memory, disk)
+- `http_requests_total` - Total requests by method, endpoint, status
+- `http_request_duration_seconds` - Request latency histogram
+- `http_requests_in_progress` - Current active requests
+- `system_cpu_usage_percent` - CPU utilization
+- `system_memory_usage_percent` - Memory utilization
+- `system_disk_usage_percent` - Disk utilization
+- `database_connections_active` - Active database connections
+
+### Quick Links
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **Grafana Dashboard** | http://localhost:3000/d/portcast-api/portcast-api-dashboard | admin/admin |
+| **Prometheus UI** | http://localhost:9090 | - |
+| **Prometheus Targets** | http://localhost:9090/targets | - |
+
+For detailed monitoring setup, see [MONITORING.md](MONITORING.md)
 
 ---
 
