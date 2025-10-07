@@ -10,35 +10,43 @@ class TestDictionaryAPI:
     @pytest.mark.asyncio
     async def test_get_dictionary_success_with_cache(self, client, mock_redis, test_db, sample_word_frequencies):
         """Test successful retrieval of dictionary with cached data"""
-        # Mock Redis to return cached word frequencies
-        mock_redis.zrevrange = AsyncMock(return_value=[
-            b"test:100", b"sample:80", b"paragraph:60", b"words:50", b"data:40"
-        ])
+        # Mock the get_top_words_from_cache function to return cached data
+        cached_words = [
+            ("test", 100), ("sample", 80), ("paragraph", 60), ("words", 50), ("data", 40),
+            ("python", 30), ("fastapi", 25), ("redis", 20), ("database", 15), ("search", 10)
+        ]
 
-        # Mock Redis to return cached definitions
+        definitions_map = {
+            "word_def:test": b"A procedure for critical evaluation",
+            "word_def:sample": b"A small part or quantity",
+            "word_def:paragraph": b"A distinct section of writing",
+            "word_def:words": b"A unit of language",
+            "word_def:data": b"Facts and statistics",
+            "word_def:python": b"A programming language",
+            "word_def:fastapi": b"A modern web framework",
+            "word_def:redis": b"An in-memory data store",
+            "word_def:database": b"A structured data storage",
+            "word_def:search": b"The act of looking for something"
+        }
+
         async def mock_get(key):
-            definitions = {
-                "definition:test": b"A procedure for critical evaluation",
-                "definition:sample": b"A small part or quantity",
-                "definition:paragraph": b"A distinct section of writing",
-                "definition:words": b"A unit of language",
-                "definition:data": b"Facts and statistics"
-            }
-            return definitions.get(key)
+            return definitions_map.get(key)
 
-        mock_redis.get = AsyncMock(side_effect=mock_get)
+        mock_redis.get.side_effect = mock_get
 
-        # Make request
-        response = await client.get("/api/dictionary")
+        # Patch get_top_words_from_cache to return our cached data
+        with patch('backend.dict_service.service.get_top_words_from_cache', new=AsyncMock(return_value=cached_words)):
+            # Make request
+            response = await client.get("/api/dictionary")
 
-        # Assertions
-        assert response.status_code == 200
-        data = response.json()
-        assert "definitions" in data
-        assert len(data["definitions"]) == 5
-        assert data["definitions"][0]["word"] == "test"
-        assert data["definitions"][0]["frequency"] == 100
-        assert data["definitions"][0]["definition"] == "A procedure for critical evaluation"
+            # Assertions
+            assert response.status_code == 200
+            data = response.json()
+            assert "definitions" in data
+            assert len(data["definitions"]) == 10  # API returns top 10 by default
+            assert data["definitions"][0]["word"] == "test"
+            assert data["definitions"][0]["frequency"] == 100
+            assert data["definitions"][0]["definition"] == "A procedure for critical evaluation"
 
     @pytest.mark.asyncio
     async def test_get_dictionary_success_from_db(self, client, mock_redis, test_db):
@@ -273,17 +281,28 @@ class TestDictionaryAPI:
     @pytest.mark.asyncio
     async def test_get_dictionary_cache_bytes_decoding(self, client, mock_redis, test_db):
         """Test that dictionary endpoint properly decodes bytes from Redis"""
-        # Mock Redis to return cached word frequencies
-        mock_redis.zrevrange = AsyncMock(return_value=[b"decode:50"])
+        # Mock get_top_words_from_cache to return cached data
+        cached_words = [
+            ("decode", 50), ("word2", 45), ("word3", 40), ("word4", 35), ("word5", 30),
+            ("word6", 25), ("word7", 20), ("word8", 15), ("word9", 10), ("word10", 5)
+        ]
 
-        # Mock Redis to return bytes definition
-        mock_redis.get = AsyncMock(return_value=b"A process of conversion")
+        async def mock_get(key):
+            if key == "word_def:decode":
+                return b"A process of conversion"
+            return None
 
-        # Make request
-        response = await client.get("/api/dictionary")
+        mock_redis.get.side_effect = mock_get
 
-        # Assertions
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data["definitions"]) == 1
-        assert data["definitions"][0]["definition"] == "A process of conversion"
+        # Patch get_top_words_from_cache to return our cached data
+        with patch('backend.dict_service.service.get_top_words_from_cache', new=AsyncMock(return_value=cached_words)):
+            # Make request
+            response = await client.get("/api/dictionary")
+
+            # Assertions
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data["definitions"]) == 10
+            # Verify the first word "decode" has the cached definition decoded properly
+            assert data["definitions"][0]["word"] == "decode"
+            assert data["definitions"][0]["definition"] == "A process of conversion"

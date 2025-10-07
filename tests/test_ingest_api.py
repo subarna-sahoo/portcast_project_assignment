@@ -273,6 +273,9 @@ class TestIngestAPI:
                 # Assertions
                 assert response.status_code == 200
 
+                # Expire all cached objects and re-query to get fresh data
+                test_db.expire_all()
+
                 # Verify word frequency was incremented (10 + 2 = 12)
                 stmt = select(WordFrequency).where(WordFrequency.word == "python")
                 result = await test_db.execute(stmt)
@@ -307,8 +310,8 @@ class TestIngestAPI:
                 assert response.status_code == 200
                 # Verify Redis delete was called (cache invalidation)
                 mock_redis.delete.assert_called()
-                # Verify Redis zadd was called (cache update)
-                mock_redis.zadd.assert_called()
+                # Verify Redis setex was called (cache update with JSON data)
+                mock_redis.setex.assert_called()
 
     @pytest.mark.asyncio
     async def test_fetch_paragraph_redis_failure_continues(self, client, test_db, mock_redis):

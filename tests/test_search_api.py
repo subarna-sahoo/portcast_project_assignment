@@ -154,15 +154,26 @@ class TestSearchAPI:
     @pytest.mark.asyncio
     async def test_search_empty_words_list(self, client, test_db):
         """Test search with empty words list"""
-        # Make request with empty words
-        response = await client.post(
-            "/api/search",
-            json={"words": [], "operator": "and"}
-        )
+        # Mock Elasticsearch to return no results for empty search
+        with patch('backend.commons.elasticsearch_client.ElasticsearchClient.search') as mock_es_search:
+            mock_es_search.return_value = {
+                "hits": {
+                    "hits": []
+                }
+            }
 
-        # Assertions
-        assert response.status_code == 200
-        # With empty words, ES should return no results or handle gracefully
+            # Make request with empty words
+            response = await client.post(
+                "/api/search",
+                json={"words": [], "operator": "and"}
+            )
+
+            # Assertions
+            assert response.status_code == 200
+            # With empty words, ES should return no results
+            data = response.json()
+            assert data["paragraphs"] == []
+            assert data["total"] == 0
 
     @pytest.mark.asyncio
     async def test_search_elasticsearch_failure(self, client, test_db):

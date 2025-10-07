@@ -1,16 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Literal, Optional
 
 
 
 class ParagraphResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     content: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 class SearchRequest(BaseModel):
     words: List[str]
