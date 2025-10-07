@@ -510,7 +510,8 @@ The application includes comprehensive monitoring with Prometheus and Grafana da
 
 Access the real-time monitoring dashboard at **http://localhost:3000/d/portcast-api/portcast-api-dashboard** (credentials: `admin`/`admin`)
 
-![Grafana Dashboard](docs/images/grafana-dashboard.png)
+<img width="1200" height="662" alt="image" src="https://github.com/user-attachments/assets/f38c300c-9907-4121-91d7-0372a6d0e117" />
+
 
 The dashboard provides:
 - **Request Rate**: Real-time API request metrics by endpoint
