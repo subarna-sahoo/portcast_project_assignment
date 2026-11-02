@@ -11,7 +11,6 @@
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
 - [API Documentation](#api-documentation)
@@ -39,11 +38,11 @@ This application provides a robust API for:
 | **Backend** | FastAPI 0.115.0 | Async web framework |
 | **Database** | PostgreSQL + asyncpg | Primary data store |
 | **Search** | Elasticsearch 8.11.0 | Full-text search engine |
-| **Cache** | Redis 6.4.0 | Fast data caching |
+| **Cache** | Redis (redis-py 6.4.0) | Fast data caching |
 | **Monitoring** | Prometheus + psutil | Metrics & health checks |
 | **Testing** | pytest + pytest-asyncio | Test framework |
 | **Proxy** | Nginx | Reverse proxy |
-| **Frontend** | React | Simple UI interface |
+| **Frontend** | HTML + vanilla JS | Simple UI interface |
 
 ---
 
@@ -71,6 +70,8 @@ This application provides a robust API for:
 
 ---
 
+## 🚀 Quick Start
+
 ### Prerequisites
 
 - Docker & Docker Compose
@@ -81,7 +82,7 @@ This application provides a robust API for:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/subarna-sahoo/portcast_project_assignment.git
 cd portcast_project_assignment
 
 # Start all services
@@ -101,7 +102,7 @@ docker-compose logs -f backend
 | **Metrics** | http://localhost/api/metrics | Prometheus metrics |
 | **Grafana Dashboard** | http://localhost:3000 | Monitoring dashboards (admin/admin) |
 | **Prometheus** | http://localhost:9090 | Metrics storage & queries |
-| **Frontend** | http://localhost/ | React UI |
+| **Frontend** | http://localhost/ | Web UI |
 
 ---
 
@@ -343,9 +344,8 @@ portcast_project_assignment/
 │   ├── main.py                  # Application entry point
 │   ├── requirements.txt         # Python dependencies
 │   └── Dockerfile               # Backend container
-├── frontend/                     # React frontend
-│   ├── public/                  # Static assets
-│   └── src/                     # Source code
+├── frontend/                     # Static web UI
+│   └── index.html               # Single-page frontend
 ├── nginx/                        # Nginx configuration
 │   ├── nginx.conf               # Nginx config
 │   └── Dockerfile               # Nginx container
